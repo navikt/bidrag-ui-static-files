@@ -1,0 +1,46 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: bidrag-ui-static-files
+  namespace: bidrag
+  annotations:
+    config.linkerd.io/proxy-memory-limit: "512M"
+    config.linkerd.io/proxy-memory-request: "128M"
+  labels:
+    team: bidrag
+spec:
+  image: {{ image }}
+  replicas:
+    min: {{minReplicas}}
+    max: {{maxReplicas}}
+    cpuThresholdPercentage: 90
+  ingresses:
+    - {{ ingress }}
+  port: 8080
+  liveness:
+    path: /internal/health
+    initialDelay: 10
+    timeout: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  readiness:
+    path: /internal/health
+    initialDelay: 10
+    periodSeconds: 5
+    timeout: 5
+  prometheus:
+    enabled: true
+    path: /internal/prometheus
+  resources:
+    limits:
+      cpu: 500m
+      memory: 600Mi
+    requests:
+      cpu: 200m
+      memory: 400Mi
+  gcp:
+    buckets:
+      - name: {{ bucketName }}
+  env:
+    - name: BUCKET_NAME
+      value: {{ bucketName }}

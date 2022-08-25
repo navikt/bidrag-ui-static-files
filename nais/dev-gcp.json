@@ -1,0 +1,6 @@
+{
+  "bucketName": "bidrag-ui-static-files-dev",
+  "ingress": "https://bidrag-ui-static-files.dev.nav.no",
+  "minReplicas": 1,
+  "maxReplicas": 2
+}
