@@ -29,7 +29,6 @@ jobs:
       - name: Build server
         run: npm run build
       - name: Build and publish Docker image
-        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/dev-')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -59,7 +58,7 @@ jobs:
           VARS: nais/dev-gcp.json
 
   deploy-to-prod-gcp:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/release'
     name: Deploy to prod-gcp
     needs: [build-and-publish]
     runs-on: ubuntu-latest
