@@ -16,8 +16,8 @@ const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
 
 collectDefaultMetrics()
-app.use(cors({ origin: '*' }))
-// app.use(cors({ origin: /\.nav\.no$/ }))
+// app.use(cors({ origin: '*' }))
+app.use(cors({ origin: /\.nav\.no$/ }))
 
 app.set('x-powered-by', false)
 
