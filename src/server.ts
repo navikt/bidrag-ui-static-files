@@ -39,7 +39,7 @@ app.get('*', async(req, res) => {
     const filnavn = decodeURI(req.path.slice(1))
 
     const isRemoteEntryFile = () => {
-        logger.info('Sjekker path', req.path, req.path.includes('remoteEntry.js'))
+        logger.info('Sjekker path -' + req.path + '-'+ req.path.includes('remoteEntry.js'))
         return req.path.includes('remoteEntry.js')
     }
     const sendFil = (file: InMemFile) => {
