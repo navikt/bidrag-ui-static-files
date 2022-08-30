@@ -38,9 +38,13 @@ app.get('/internal/prometheus', async(req, res) => {
 app.get('*', async(req, res) => {
     const filnavn = decodeURI(req.path.slice(1))
 
+    const isRemoteEntryFile = () => {
+        console.log('Sjekker path', req.path)
+        return req.path.includes('remoteEntry.js')
+    }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
-        res.setHeader('cache-control', 'public, max-age=31536000, immutable')
+        res.setHeader('cache-control', isRemoteEntryFile() ? 'public max-age=600 immutable': 'public, max-age=31536000, immutable')
         res.send(file.content)
         successCounter.inc()
     }
@@ -60,7 +64,9 @@ app.get('*', async(req, res) => {
             content,
             contentType
         }
-        cache[filnavn] = hentetFil
+        if (!isRemoteEntryFile()){
+            cache[filnavn] = hentetFil
+        }
         sendFil(hentetFil)
     } catch (e: any) {
         if (e.code == 404) {
