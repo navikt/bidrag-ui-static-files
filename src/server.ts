@@ -64,6 +64,7 @@ app.get('*', async(req, res) => {
             content,
             contentType
         }
+        logger.info('Hentet fil ' + filnavn)
         if (!isRemoteEntryFile()){
             cache[filnavn] = hentetFil
         }
@@ -80,6 +81,15 @@ app.get('*', async(req, res) => {
         }
     }
 })
+
+setInterval(() => {
+    logger.info('Flusher cache for remoteEntry.js')
+    for (const member in cache) {
+        logger.info(`Fjerner ${member} fra cache`)
+        delete cache[member]
+    }
+
+}, cacheFlushInterval)
 
 setInterval(() => {
     logger.info('Flusher cache')
