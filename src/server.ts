@@ -65,9 +65,7 @@ app.get('*', async(req, res) => {
             content,
             contentType
         }
-        if (!isRemoteEntryFile()){
-            cache[filnavn] = hentetFil
-        }
+        cache[filnavn] = hentetFil
         sendFil(hentetFil)
     } catch (e: any) {
         if (e.code == 404) {
