@@ -14,6 +14,8 @@ const bucketName = hentBucketName()
 const bucket = await storage.bucket(bucketName)
 const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
+const remoteEntryCacheFlushInterval = 5 * 60 * 1000 // 5 minutter i millisekunder
+const remoteEntryFileName = 'remoteEntry.js'
 
 collectDefaultMetrics()
 // app.use(cors({ origin: '*' }))
@@ -39,8 +41,7 @@ app.get('*', async(req, res) => {
     const filnavn = decodeURI(req.path.slice(1))
 
     const isRemoteEntryFile = () => {
-        logger.info('Sjekker path -' + req.path + '-'+ req.path.includes('remoteEntry.js'))
-        return req.path.includes('remoteEntry.js')
+        return req.path.includes(remoteEntryFileName)
     }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
@@ -64,7 +65,6 @@ app.get('*', async(req, res) => {
             content,
             contentType
         }
-        logger.info('Hentet fil ' + filnavn)
         if (!isRemoteEntryFile()){
             cache[filnavn] = hentetFil
         }
@@ -85,11 +85,13 @@ app.get('*', async(req, res) => {
 setInterval(() => {
     logger.info('Flusher cache for remoteEntry.js')
     for (const member in cache) {
-        logger.info(`Fjerner ${member} fra cache`)
-        delete cache[member]
+        if (member.includes(remoteEntryFileName)){
+            logger.info(`Fjerner ${member} fra cache`)
+            delete cache[member]
+        }
     }
 
-}, cacheFlushInterval)
+}, remoteEntryCacheFlushInterval)
 
 setInterval(() => {
     logger.info('Flusher cache')
