@@ -45,7 +45,7 @@ app.get('*', async(req, res) => {
     }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
-        res.setHeader('cache-control', isRemoteEntryFile() ? 'public max-age=600 immutable': 'public, max-age=31536000, immutable')
+        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=300, immutable': 'public, max-age=31536000, immutable')
         res.send(file.content)
         successCounter.inc()
     }
