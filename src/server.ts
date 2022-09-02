@@ -14,7 +14,7 @@ const bucketName = hentBucketName()
 const bucket = await storage.bucket(bucketName)
 const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
-const remoteEntryCacheFlushInterval = 10 * 60 * 1000 // 5 minutter i millisekunder
+const remoteEntryCacheFlushInterval = 0.5 * 60 * 1000 // 5 minutter i millisekunder
 const remoteEntryFileName = 'remoteEntry.js'
 
 collectDefaultMetrics()
