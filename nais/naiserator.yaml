@@ -15,7 +15,9 @@ spec:
     max: {{maxReplicas}}
     cpuThresholdPercentage: 90
   ingresses:
-    - {{ ingress }}
+  {{#each ingresses as |url|}}
+     - {{url}}
+  {{/each}}
   port: 8080
   liveness:
     path: /internal/health
