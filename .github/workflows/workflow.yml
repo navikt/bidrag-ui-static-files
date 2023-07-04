@@ -5,7 +5,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build-and-publish:
+  build_and_push:
     permissions:
       contents: "read"
       id-token: "write"
@@ -41,6 +41,7 @@ jobs:
         id: docker-push
         with:
           team: bidrag
+          tag: ${{ env.IMAGE }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
     outputs:
@@ -49,7 +50,7 @@ jobs:
   deploy-to-dev-gcp:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/dev')
     name: Deploy to dev-gcp
-    needs: [build-and-publish]
+    needs: build_and_push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -66,12 +67,12 @@ jobs:
           CLUSTER: dev-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/dev-gcp.json
-          IMAGE: ${{ needs.build.outputs.image }}
+          IMAGE: ${{ needs.build_and_push.outputs.image }}
 
   deploy-to-prod-gcp:
     if: github.ref == 'refs/heads/release'
     name: Deploy to prod-gcp
-    needs: [build-and-publish]
+    needs: build_and_push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -88,4 +89,4 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/prod-gcp.json
-          IMAGE: ${{ needs.build.outputs.image }}
+          IMAGE: ${{ needs.build_and_push.outputs.image }}
