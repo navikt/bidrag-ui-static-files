@@ -2,13 +2,28 @@ name: Push
 on: push
 env:
   APP: bidrag-ui-static-files
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build-and-publish:
+    permissions:
+      contents: "read"
+      id-token: "write"
     name: Bygg, test og push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - uses: actions/cache@v3
+        id: yarn-cache
+        with:
+          path: .yarn/cache
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Generer versjon og image navn
         run: |
           TIME=$(TZ="Europe/Oslo" date +%Y.%m.%d-%H.%M)
@@ -18,23 +33,24 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - run: echo $VERSION > VERSION.txt
       - name: Last opp VERSION til neste job
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3ß
         with:
           name: VERSION.txt
           path: VERSION.txt
-      - name: Install npm dependencies
-        run: npm ci
-      - name: Run lint
-        run: npm run lint
-      - name: Build server
-        run: npm run build
-      - name: Build and publish Docker image
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          docker build -t ${IMAGE} .
-          echo ${GITHUB_TOKEN} | docker login ghcr.io --username ${GITHUB_REPOSITORY} --password-stdin
-          docker push ${IMAGE}
+      - name: Install dependencies
+        run: yarn --immutable
+      - name: Check lint
+        run: yarn lint
+      - name: Run tests and build
+        run: yarn build
+      - uses: nais/docker-build-push@v0
+        id: docker-push
+        with:
+          team: bidrag
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+    outputs:
+      image: ${{ steps.docker-push.outputs.image }}
 
   deploy-to-dev-gcp:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/dev')
@@ -42,8 +58,8 @@ jobs:
     needs: [build-and-publish]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v2
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
         with:
           name: VERSION.txt
           path: .
@@ -56,6 +72,7 @@ jobs:
           CLUSTER: dev-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/dev-gcp.json
+          IMAGE: ${{ needs.build.outputs.image }}
 
   deploy-to-prod-gcp:
     if: github.ref == 'refs/heads/release'
@@ -63,8 +80,8 @@ jobs:
     needs: [build-and-publish]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v2
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
         with:
           name: VERSION.txt
           path: .
@@ -77,3 +94,4 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/prod-gcp.json
+          IMAGE: ${{ needs.build.outputs.image }}
