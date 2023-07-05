@@ -4,8 +4,8 @@ metadata:
   name: bidrag-ui-static-files
   namespace: bidrag
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "128m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    config.linkerd.io/proxy-memory-limit: "512M"
+    config.linkerd.io/proxy-memory-request: "128M"
   labels:
     team: bidrag
 spec:
