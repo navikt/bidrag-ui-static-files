@@ -45,7 +45,7 @@ app.get('*', async(req, res) => {
     }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
-        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=300, immutable': 'public, max-age=31536000, immutable')
+        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=300, immutable' : 'public, max-age=31536000, immutable')
         res.send(file.content)
         successCounter.inc()
     }
@@ -60,12 +60,12 @@ app.get('*', async(req, res) => {
         logger.info(`Henter ${filnavn} fra bucket ${bucketName}`)
 
         const content = (await bucket.file(filnavn).download())[0]
-        const contentType = (await bucket.file(filnavn).getMetadata())[0].contentType
+        const contentType = (await bucket.file(filnavn).getMetadata())[0].contentType!
         const hentetFil = {
             content,
             contentType
         }
-        cache[filnavn] = hentetFil
+        cache[filnavn!] = hentetFil
         sendFil(hentetFil)
     } catch (e: any) {
         if (e.code == 404) {
@@ -83,7 +83,7 @@ app.get('*', async(req, res) => {
 setInterval(() => {
     logger.info('Flusher cache for remoteEntry.js')
     for (const member in cache) {
-        if (member.includes(remoteEntryFileName)){
+        if (member.includes(remoteEntryFileName)) {
             logger.info(`Fjerner ${member} fra cache`)
             delete cache[member]
         }

@@ -1,15 +1,12 @@
-name: Push
+name: Build and deploy
 on: push
-env:
-  APP: bidrag-ui-static-files
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build_and_push:
     permissions:
       contents: "read"
       id-token: "write"
-    name: Bygg, test og push Docker image
+    name: Bygg og push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,19 +15,6 @@ jobs:
         with:
           node-version: 18.x
           cache: 'npm'
-      - name: Generer versjon og image navn
-        run: |
-          TIME=$(TZ="Europe/Oslo" date +%Y.%m.%d-%H.%M)
-          COMMIT=$(git rev-parse --short=8 HEAD)
-          VERSION=$TIME-$COMMIT
-          echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - run: echo $VERSION > VERSION.txt
-      - name: Last opp VERSION til neste job
-        uses: actions/upload-artifact@v3
-        with:
-          name: VERSION.txt
-          path: VERSION.txt
       - name: Install dependencies
         run: npm ci
       - name: Check lint
@@ -41,7 +25,6 @@ jobs:
         id: docker-push
         with:
           team: bidrag
-          tag: ${{ env.IMAGE }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
     outputs:
@@ -54,12 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-        with:
-          name: VERSION.txt
-          path: .
-      - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
-      - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to dev-gcp
         uses: nais/deploy/actions/deploy@v1
         env:
@@ -76,12 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-        with:
-          name: VERSION.txt
-          path: .
-      - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
-      - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to prod-gcp
         uses: nais/deploy/actions/deploy@v1
         env:
