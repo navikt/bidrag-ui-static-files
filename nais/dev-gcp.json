@@ -1,5 +1,5 @@
 {
-  "bucketName": "bidrag-ui-static-files-dev-2",
+  "bucketName": "bidrag-ui-static-files-dev",
   "ingresses": [
     "https://bidrag-ui-static-files.intern.dev.nav.no"
   ],
