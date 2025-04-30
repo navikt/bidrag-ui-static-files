@@ -60,7 +60,7 @@ jobs:
       - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
       - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to dev-gcp
-        uses: nais/deploy/actions/deploy@v1
+        uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/naiserator.yaml
@@ -81,7 +81,7 @@ jobs:
       - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
       - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to prod-gcp
-        uses: nais/deploy/actions/deploy@v1
+        uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
           RESOURCE: nais/naiserator.yaml
