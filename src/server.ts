@@ -23,7 +23,9 @@ app.use(cors({ origin: /\.nav\.no$/ }))
 
 app.set('x-powered-by', false)
 
-app.get('/', async(req, res) => res.send('I am bidrag ui static files'))
+app.get('/', (req, res) => {
+    res.send('I am bidrag ui static files')
+})
 app.get('/robots.txt', (req, res) => {
     res.header('Content-Type', 'text/plain')
     res.send('User-agent: *\nDisallow: /')
@@ -31,7 +33,9 @@ app.get('/robots.txt', (req, res) => {
 app.get('/favicon.ico', (req, res) => {
     res.sendStatus(404)
 })
-app.get('/internal/health', async(req, res) => res.sendStatus(200))
+app.get('/internal/health', async(req, res) => {
+    res.sendStatus(200)
+})
 app.get('/internal/prometheus', async(req, res) => {
     res.set('Content-Type', register.contentType)
     res.end(await register.metrics())
@@ -60,8 +64,8 @@ app.get('*', async(req, res) => {
         logger.info(`Henter ${filnavn} fra bucket ${bucketName}`)
 
         const content = (await bucket.file(filnavn).download())[0]
-        const contentType = (await bucket.file(filnavn).getMetadata())[0].contentType
-        const hentetFil = {
+        const contentType = (await bucket.file(filnavn).getMetadata())[0].contentType!
+        const hentetFil: InMemFile = {
             content,
             contentType
         }
