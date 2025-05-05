@@ -18,7 +18,7 @@ Din google konto må ha rollene `Service Account Admin`, `Service Account Key Ad
 Husk å fjerne rollene når du ikke lengre trenger dem.
 
 
-## Bruk fra app
+## Bruk fra app2
 I en next app hvor filene er lastet opp til denne appen kan man sette `assetPrefix` til å peke på denne appen. 
 
 Se i appen spinnsyn-frontend [spinnsyn-frontend](https://github.com/navikt/spinnsyn-frontend) for et eksempel.

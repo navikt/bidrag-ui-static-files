@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 22.x
           cache: 'npm'
       - name: Generer versjon og image navn
         run: |
@@ -27,7 +27,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - run: echo $VERSION > VERSION.txt
       - name: Last opp VERSION til neste job
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: VERSION.txt
           path: VERSION.txt
@@ -48,44 +48,47 @@ jobs:
       image: ${{ steps.docker-push.outputs.image }}
 
   deploy-to-dev-gcp:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/dev')
     name: Deploy to dev-gcp
     needs: build_and_push
     runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: VERSION.txt
           path: .
       - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
       - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to dev-gcp
-        uses: nais/deploy/actions/deploy@v1
+        uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/dev-gcp.json
           IMAGE: ${{ needs.build_and_push.outputs.image }}
 
   deploy-to-prod-gcp:
-    if: github.ref == 'refs/heads/release'
+    if: github.ref == 'refs/heads/main'
     name: Deploy to prod-gcp
     needs: build_and_push
     runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: VERSION.txt
           path: .
       - run: echo "VERSION=`cat VERSION.txt`" >> $GITHUB_ENV
       - run: echo "IMAGE=ghcr.io/navikt/$APP:$VERSION" >> $GITHUB_ENV
       - name: Deploy to prod-gcp
-        uses: nais/deploy/actions/deploy@v1
+        uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: nais/naiserator.yaml
           VARS: nais/prod-gcp.json
