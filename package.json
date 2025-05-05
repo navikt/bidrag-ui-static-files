@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node ./build/index.js",
+    "dev": "tsx ./src/server.ts",
     "build": "rimraf build && ncc build src/server.ts -o build",
     "lint": "eslint --ext=ts src",
     "lint:fix": "eslint --ext=ts src --fix"
@@ -24,6 +25,8 @@
     "eslint": "^8.44.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "rimraf": "^5.0.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
 }

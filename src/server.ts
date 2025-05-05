@@ -41,7 +41,7 @@ app.get('/internal/prometheus', async(req, res) => {
     res.end(await register.metrics())
 })
 
-app.get('*', async(req, res) => {
+app.get('/*default', async(req, res) => {
     const filnavn = decodeURI(req.path.slice(1))
 
     const isRemoteEntryFile = () => {
