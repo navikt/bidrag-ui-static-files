@@ -10,7 +10,7 @@
     "lint:fix": "eslint --ext=ts src --fix"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.16.0",
+    "@google-cloud/storage": "^7.17.3",
     "cors": "^2.8.5",
     "express": "5.0.0",
     "pino": "^9.6.0",
