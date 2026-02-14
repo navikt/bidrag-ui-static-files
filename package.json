@@ -12,7 +12,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
     "cors": "^2.8.5",
-    "express": "5.0.0",
+    "express": "5.2.1",
     "pino": "^9.6.0",
     "prom-client": "^15.1.3"
   },
