@@ -1,5 +1,5 @@
 import express from 'express'
-import cors from 'cors'
+// import cors from 'cors'
 import { Storage } from '@google-cloud/storage'
 import { logger } from './logger'
 import { InMemFile, FileCache } from './types'
@@ -14,12 +14,12 @@ const bucketName = hentBucketName()
 const bucket = await storage.bucket(bucketName)
 const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
-const remoteEntryCacheFlushInterval = 5 * 60 * 1000 // 5 minutter i millisekunder
+const remoteEntryCacheFlushInterval = 0.5 * 60 * 1000 // 5 minutter i millisekunder
 const remoteEntryFileName = 'remoteEntry.js'
 
 collectDefaultMetrics()
 // app.use(cors({ origin: '*' }))
-app.use(cors({ origin: /\.nav\.no$/ }))
+// app.use(cors({ origin: /\.nav\.no$/ }))
 
 app.set('x-powered-by', false)
 
@@ -49,7 +49,7 @@ app.get('/*default', async(req, res) => {
     }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
-        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=300, immutable': 'public, max-age=31536000, immutable')
+        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=600, immutable': 'public, max-age=31536000, immutable')
         res.send(file.content)
         successCounter.inc()
     }
