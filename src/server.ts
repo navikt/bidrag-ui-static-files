@@ -14,7 +14,6 @@ const bucketName = hentBucketName()
 const bucket = await storage.bucket(bucketName)
 const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
-const remoteEntryCacheFlushInterval = 5 * 60 * 1000 // 5 minutter i millisekunder
 const remoteEntryFileName = 'remoteEntry.js'
 
 collectDefaultMetrics()
@@ -43,17 +42,15 @@ app.get('/internal/prometheus', async(req, res) => {
 
 app.get('/*default', async(req, res) => {
     const filnavn = decodeURI(req.path.slice(1))
+    const isRemoteEntryFile = req.path.includes(remoteEntryFileName)
 
-    const isRemoteEntryFile = () => {
-        return req.path.includes(remoteEntryFileName)
-    }
     const sendFil = (file: InMemFile) => {
         res.contentType(file.contentType)
-        res.setHeader('cache-control', isRemoteEntryFile() ? 'public, max-age=300, immutable': 'public, max-age=31536000, immutable')
+        res.setHeader('cache-control', isRemoteEntryFile ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000, immutable')
         res.send(file.content)
         successCounter.inc()
     }
-    const fil = cache[filnavn]
+    const fil = isRemoteEntryFile ? undefined : cache[filnavn]
     if (fil) {
         sendFil(fil)
         cacheHitCounter.inc()
@@ -69,10 +66,12 @@ app.get('/*default', async(req, res) => {
             content,
             contentType
         }
-        cache[filnavn] = hentetFil
+        if (!isRemoteEntryFile) {
+            cache[filnavn] = hentetFil
+        }
         sendFil(hentetFil)
     } catch (e: any) {
-        if (e.code == 404) {
+        if (e.code === 404) {
             logger.warn(`404: ${filnavn}`)
             res.sendStatus(404)
             notFoundCounter.inc()
@@ -83,17 +82,6 @@ app.get('/*default', async(req, res) => {
         }
     }
 })
-
-setInterval(() => {
-    logger.info('Flusher cache for remoteEntry.js')
-    for (const member in cache) {
-        if (member.includes(remoteEntryFileName)){
-            logger.info(`Fjerner ${member} fra cache`)
-            delete cache[member]
-        }
-    }
-
-}, remoteEntryCacheFlushInterval)
 
 setInterval(() => {
     logger.info('Flusher cache')
