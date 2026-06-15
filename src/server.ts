@@ -11,10 +11,21 @@ const app = express()
 const port = 8080
 const storage = new Storage()
 const bucketName = hentBucketName()
-const bucket = await storage.bucket(bucketName)
+const bucket = storage.bucket(bucketName)
 const cache: FileCache = {}
 const cacheFlushInterval = 60 * 60 * 1000 // 1 time i millisekunder
-const remoteEntryFileName = 'remoteEntry.js'
+const noCacheFileNames = new Set([ 'remoteEntry.js', 'manifest.tsv' ])
+const defaultContentType = 'application/octet-stream'
+
+const isHttpErrorWithCode = (error: unknown): error is { code: number } =>
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'number'
+
+const shouldSkipCache = (filename: string): boolean =>
+    Array.from(noCacheFileNames).some((noCacheFileName) =>
+        filename === noCacheFileName || filename.endsWith(`/${noCacheFileName}`))
 
 collectDefaultMetrics()
 // app.use(cors({ origin: '*' }))
@@ -41,42 +52,49 @@ app.get('/internal/prometheus', async(req, res) => {
 })
 
 app.get('/*default', async(req, res) => {
-    const filnavn = decodeURI(req.path.slice(1))
-    const isRemoteEntryFile = req.path.includes(remoteEntryFileName)
+    let filnavn = ''
 
-    const sendFil = (file: InMemFile) => {
-        res.contentType(file.contentType)
-        res.setHeader('cache-control', isRemoteEntryFile ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000, immutable')
-        res.send(file.content)
-        successCounter.inc()
-    }
-    const fil = isRemoteEntryFile ? undefined : cache[filnavn]
-    if (fil) {
-        sendFil(fil)
-        cacheHitCounter.inc()
-        return
-    }
     try {
+        filnavn = decodeURI(req.path.slice(1))
+        const shouldNotCacheFile = shouldSkipCache(filnavn)
+
+        const sendFil = (file: InMemFile) => {
+            res.contentType(file.contentType)
+            res.setHeader('cache-control', shouldNotCacheFile ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000, immutable')
+            res.send(file.content)
+            successCounter.inc()
+        }
+        const fil = shouldNotCacheFile ? undefined : cache[filnavn]
+        if (fil) {
+            sendFil(fil)
+            cacheHitCounter.inc()
+            return
+        }
+
         cacheMissCounter.inc()
         logger.info(`Henter ${filnavn} fra bucket ${bucketName}`)
 
-        const content = (await bucket.file(filnavn).download())[0]
-        const contentType = (await bucket.file(filnavn).getMetadata())[0].contentType!
+        const file = bucket.file(filnavn)
+        const [ [ content ], [ metadata ] ] = await Promise.all([
+            file.download(),
+            file.getMetadata(),
+        ])
+
         const hentetFil: InMemFile = {
             content,
-            contentType
+            contentType: metadata.contentType ?? defaultContentType,
         }
-        if (!isRemoteEntryFile) {
+        if (!shouldNotCacheFile) {
             cache[filnavn] = hentetFil
         }
         sendFil(hentetFil)
-    } catch (e: any) {
-        if (e.code === 404) {
+    } catch (error: unknown) {
+        if (isHttpErrorWithCode(error) && error.code === 404) {
             logger.warn(`404: ${filnavn}`)
             res.sendStatus(404)
             notFoundCounter.inc()
         } else {
-            logger.error({ msg: `Feil ved henting av ${filnavn}`, err: JSON.stringify(e) })
+            logger.error({ msg: `Feil ved henting av ${filnavn}`, err: error })
             res.sendStatus(500)
             errorCounter.inc()
         }
@@ -93,4 +111,3 @@ setInterval(() => {
 }, cacheFlushInterval)
 
 app.listen(port, () => logger.info(`Bidrag ui static files lytter på ${port}!`))
-
