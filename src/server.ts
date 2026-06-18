@@ -75,32 +75,18 @@ app.get('/*default', async(req, res) => {
         logger.info(`Henter ${filnavn} fra bucket ${bucketName}`)
 
         const file = bucket.file(filnavn)
-        const [ metadata ] = await file.getMetadata()
-        const contentType = metadata.contentType ?? defaultContentType
+        const [ [ content ], [ metadata ] ] = await Promise.all([
+            file.download(),
+            file.getMetadata(),
+        ])
 
-        if (shouldNotCacheFile) {
-            res.contentType(contentType)
-            res.setHeader('cache-control', 'no-cache, no-store, must-revalidate')
-            file.createReadStream()
-                .on('error', (error: unknown) => {
-                    if (isHttpErrorWithCode(error) && error.code === 404) {
-                        logger.warn(`404: ${filnavn}`)
-                        res.sendStatus(404)
-                        notFoundCounter.inc()
-                    } else {
-                        logger.error({ msg: `Feil ved henting av ${filnavn}`, err: error })
-                        res.sendStatus(500)
-                        errorCounter.inc()
-                    }
-                })
-                .pipe(res)
-            successCounter.inc()
-            return
+        const hentetFil: InMemFile = {
+            content,
+            contentType: metadata.contentType ?? defaultContentType,
         }
-
-        const [ content ] = await file.download()
-        const hentetFil: InMemFile = { content, contentType }
-        cache[filnavn] = hentetFil
+        if (!shouldNotCacheFile) {
+            cache[filnavn] = hentetFil
+        }
         sendFil(hentetFil)
     } catch (error: unknown) {
         if (isHttpErrorWithCode(error) && error.code === 404) {
